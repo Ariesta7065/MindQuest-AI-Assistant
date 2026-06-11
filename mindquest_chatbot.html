@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindQuest AI Assistant</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+#app { display: flex; height: 620px; width: 860px; border: 1px solid #e0e0e0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+
+/* SIDEBAR */
+#sidebar { width: 230px; border-right: 1px solid #efefef; display: flex; flex-direction: column; background: #fafafa; flex-shrink: 0; }
+#sidebar-header { padding: 16px; border-bottom: 1px solid #efefef; }
+.brand { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.tagline { font-size: 11px; color: #888; margin-top: 2px; }
+
+#xp-section { padding: 12px 16px; border-bottom: 1px solid #efefef; }
+.level-badge { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.level-icon { width: 34px; height: 34px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.level-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.level-sub { font-size: 11px; color: #888; }
+.xp-bar-bg { height: 5px; background: #e8e8e8; border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+.xp-bar-fill { height: 100%; background: #7F77DD; border-radius: 999px; transition: width 0.5s ease; }
+.xp-label { font-size: 11px; color: #aaa; }
+
+#quests-section { padding: 12px 16px; border-bottom: 1px solid #efefef; }
+.section-title { font-size: 10px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.quest-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
+.quest-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.quest-check.done { background: #7F77DD; border-color: #7F77DD; }
+.quest-check.done::after { content: '✓'; font-size: 10px; color: #fff; }
+.quest-text { font-size: 12px; color: #555; flex: 1; }
+.quest-xp { font-size: 11px; color: #7F77DD; font-weight: 600; }
+
+#badges-section { padding: 12px 16px; flex: 1; }
+.badge-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.badge { background: #EEEDFE; color: #3C3489; font-size: 10px; padding: 3px 8px; border-radius: 999px; }
+.badge.locked { background: #f0f0f0; color: #bbb; }
+
+/* CHAT AREA */
+#chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#chat-header { padding: 12px 16px; border-bottom: 1px solid #efefef; display: flex; align-items: center; gap: 10px; background: #fff; }
+.ai-avatar { width: 34px; height: 34px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.header-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.header-status { font-size: 12px; color: #888; display: flex; align-items: center; gap: 4px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; }
+
+#messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #fdfcff; }
+.msg { display: flex; gap: 8px; max-width: 88%; }
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.msg-avatar.bot { background: #EEEDFE; }
+.msg-avatar.user { background: #dbeafe; }
+.msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; color: #1a1a1a; }
+.msg.bot .msg-bubble { background: #fff; border: 1px solid #efefef; border-radius: 4px 12px 12px 12px; }
+.msg.user .msg-bubble { background: #EEEDFE; color: #26215C; border-radius: 12px 4px 12px 12px; }
+.msg-source { font-size: 11px; color: #aaa; margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap; }
+.source-chip { background: #f5f5f5; border: 1px solid #e8e8e8; padding: 2px 7px; border-radius: 4px; font-size: 10px; color: #666; }
+
+.typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: #ccc; animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+.xp-toast { position: fixed; top: 20px; right: 20px; background: #EEEDFE; color: #3C3489; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 10px; border: 1px solid #AFA9EC; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+.xp-toast.show { opacity: 1; }
+
+#quick-qs { padding: 8px 16px; border-top: 1px solid #efefef; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; background: #fff; }
+#quick-qs::-webkit-scrollbar { display: none; }
+.quick-q { flex-shrink: 0; font-size: 11px; padding: 5px 11px; border-radius: 999px; border: 1px solid #ddd; background: transparent; color: #666; cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; }
+.quick-q:hover { background: #EEEDFE; color: #3C3489; border-color: #AFA9EC; }
+
+#input-row { padding: 10px 16px; border-top: 1px solid #efefef; display: flex; gap: 8px; align-items: flex-end; background: #fff; }
+#user-input { flex: 1; border: 1px solid #ddd; border-radius: 10px; padding: 9px 13px; font-size: 13px; background: #fafafa; color: #1a1a1a; outline: none; resize: none; font-family: inherit; min-height: 38px; max-height: 90px; line-height: 1.5; }
+#user-input:focus { border-color: #7F77DD; background: #fff; }
+#send-btn { width: 38px; height: 38px; border-radius: 10px; background: #7F77DD; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; transition: background 0.15s; }
+#send-btn:hover { background: #534AB7; }
+
+.disclaimer { font-size: 10px; color: #bbb; text-align: center; padding: 5px 16px; background: #fff; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div class="brand">🧠 MindQuest</div>
+      <div class="tagline">Level Up Your Mind, One Quest at a Time</div>
+    </div>
+
+    <div id="xp-section">
+      <div class="level-badge">
+        <div class="level-icon" id="level-icon">🌱</div>
+        <div>
+          <div class="level-name" id="level-name">Beginner</div>
+          <div class="level-sub" id="level-sub">Level 1</div>
+        </div>
+      </div>
+      <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-fill" style="width:0%"></div></div>
+      <div class="xp-label" id="xp-label">0 / 100 XP</div>
+    </div>
+
+    <div id="quests-section">
+      <div class="section-title">Daily Quest</div>
+      <div class="quest-item" onclick="completeQuest(0)">
+        <div class="quest-check" id="q0"></div>
+        <span class="quest-text">Meditasi 5 menit</span>
+        <span class="quest-xp">+15 XP</span>
+      </div>
+      <div class="quest-item" onclick="completeQuest(1)">
+        <div class="quest-check" id="q1"></div>
+        <span class="quest-text">Tulis jurnal syukur</span>
+        <span class="quest-xp">+20 XP</span>
+      </div>
+      <div class="quest-item" onclick="completeQuest(2)">
+        <div class="quest-check" id="q2"></div>
+        <span class="quest-text">Jalan kaki 15 menit</span>
+        <span class="quest-xp">+25 XP</span>
+      </div>
+      <div class="quest-item" onclick="completeQuest(3)">
+        <div class="quest-check" id="q3"></div>
+        <span class="quest-text">Tanya AI 1 pertanyaan</span>
+        <span class="quest-xp">+10 XP</span>
+      </div>
+    </div>
+
+    <div id="badges-section">
+      <div class="section-title">Badges</div>
+      <div class="badge-grid">
+        <div class="badge locked" id="badge-streak">🔥 7-Day Streak</div>
+        <div class="badge locked" id="badge-focus">🎯 Focus Champ</div>
+        <div class="badge locked" id="badge-gratitude">🙏 Gratitude Hero</div>
+        <div class="badge locked" id="badge-stress">⚡ Stress Slayer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chat-area">
+    <div id="chat-header">
+      <div class="ai-avatar">🤖</div>
+      <div>
+        <div class="header-name">MindQuest AI Assistant</div>
+        <div class="header-status"><span class="status-dot"></span>Online · RAG-powered</div>
+      </div>
+    </div>
+
+    <div id="messages">
+      <div class="msg bot">
+        <div class="msg-avatar bot">🤖</div>
+        <div>
+          <div class="msg-bubble">
+            Halo! Saya <strong>MindQuest AI</strong>, asisten kesehatan mental dan produktivitasmu. 🌟<br><br>
+            Saya siap membantu kamu dengan informasi kesehatan mental, tips self-care, dan strategi coping berbasis sumber terpercaya.<br><br>
+            Ada yang ingin kamu tanyakan hari ini?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="quick-qs">
+      <button class="quick-q" onclick="askQuestion('Apa itu burnout?')">Apa itu burnout?</button>
+      <button class="quick-q" onclick="askQuestion('Bagaimana cara mengatasi overthinking?')">Cara atasi overthinking</button>
+      <button class="quick-q" onclick="askQuestion('Saya stres karena tugas kuliah menumpuk')">Stres kuliah</button>
+      <button class="quick-q" onclick="askQuestion('Apa manfaat mindfulness?')">Manfaat mindfulness</button>
+      <button class="quick-q" onclick="askQuestion('Kebiasaan kecil untuk kesehatan mental?')">Kebiasaan sehat mental</button>
+      <button class="quick-q" onclick="askQuestion('Apa perbedaan stres dan depresi?')">Stres vs depresi</button>
+      <button class="quick-q" onclick="askQuestion('Saya cemas menghadapi presentasi besok')">Cemas presentasi</button>
+      <button class="quick-q" onclick="askQuestion('Bagaimana cara meningkatkan fokus belajar?')">Tips fokus belajar</button>
+    </div>
+
+    <div id="input-row">
+      <textarea id="user-input" placeholder="Tanyakan sesuatu tentang kesehatan mental..." rows="1"></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="Kirim">&#9658;</button>
+    </div>
+    <div class="disclaimer">⚠️ AI ini bukan psikolog. Untuk masalah serius, konsultasikan ke profesional kesehatan mental.</div>
+  </div>
+</div>
+
+<div class="xp-toast" id="xp-toast">+10 XP 🎉</div>
+
+<script>
+// =============================================
+// KNOWLEDGE BASE — sesuai dokumen MindQuest
+// =============================================
+const KNOWLEDGE_BASE = {
+  burnout: {
+    answer: `Burnout adalah sindrom kelelahan fisik, emosional, dan mental akibat stres kronis yang tidak berhasil dikelola dengan baik.\n\nGejala burnout meliputi:\n• Kelelahan emosional yang mendalam\n• Kehilangan motivasi dan semangat\n• Penurunan produktivitas\n• Sulit berkonsentrasi\n• Merasa sinis terhadap pekerjaan/studi\n\nUntuk mengurangi burnout, cobalah mengatur jadwal istirahat, menjaga pola tidur yang baik, dan lakukan aktivitas relaksasi secara rutin.`,
+    sources: ['WHO Mental Health Resources', 'Modul Psikologi Dasar']
+  },
+  overthinking: {
+    answer: `Overthinking adalah kebiasaan memikirkan sesuatu terlalu dalam dan berulang hingga mengganggu kesehatan mental.\n\nStrategi mengatasi overthinking:\n• Teknik grounding 5-4-3-2-1 (identifikasi hal yang kamu lihat, dengar, rasakan)\n• Journaling untuk mengeluarkan pikiran\n• Tetapkan waktu khusus untuk "memikirkan masalah"\n• Praktik mindfulness dan meditasi\n• Alihkan fokus ke aktivitas fisik\n\nIngat: tidak semua hal bisa kamu kontrol. Fokuslah pada apa yang ada dalam kendalimu.`,
+    sources: ['Mental Health Foundation Resources', 'Buku Self Improvement']
+  },
+  stres: {
+    answer: `Stres karena tugas yang menumpuk sangat umum dialami mahasiswa. Beberapa langkah yang bisa kamu coba:\n\n1. Buat daftar prioritas — urutkan tugas berdasarkan deadline dan tingkat kesulitan\n2. Gunakan teknik Pomodoro — belajar 25 menit, istirahat 5 menit\n3. Pecah tugas besar menjadi langkah-langkah kecil\n4. Jaga self-care dasar: tidur cukup, makan teratur, olahraga ringan\n5. Jangan ragu meminta bantuan teman atau dosen\n\nIngat, stres yang dikelola dengan baik justru bisa meningkatkan performa!`,
+    sources: ['Modul Psikologi Dasar', 'Buku Self Improvement']
+  },
+  mindfulness: {
+    answer: `Mindfulness adalah praktik memusatkan perhatian secara penuh pada momen saat ini, tanpa menghakimi.\n\nManfaat mindfulness berdasarkan penelitian:\n• Mengurangi stres dan kecemasan\n• Meningkatkan fokus dan konsentrasi\n• Memperbaiki kualitas tidur\n• Meningkatkan kesadaran diri (self-awareness)\n• Membantu regulasi emosi\n\nCara memulai: coba meditasi 5 menit setiap pagi. Duduk tenang, fokus pada napas, dan perhatikan saat pikiran mulai mengembara — lalu kembalikan fokus ke napas.`,
+    sources: ['WHO Mental Health Guidelines', 'Mental Health Foundation Resources']
+  },
+  kebiasaan: {
+    answer: `Kebiasaan kecil yang terbukti baik untuk kesehatan mental:\n\n☀️ Pagi hari:\n• Tidur dan bangun pada jam yang konsisten\n• Hindari langsung cek HP setelah bangun\n• Sarapan bergizi\n\n🌿 Sepanjang hari:\n• Istirahat pendek setiap 1-2 jam\n• Gerak fisik minimal 30 menit\n• Batasi konsumsi media sosial\n\n🌙 Malam hari:\n• Tulis 3 hal yang kamu syukuri hari ini\n• Hindari layar 1 jam sebelum tidur\n• Tidur 7-9 jam\n\nMulai dari 1-2 kebiasaan dulu, jangan sekaligus banyak!`,
+    sources: ['Mental Health Foundation Resources', 'Buku Self Improvement']
+  },
+  depresi: {
+    answer: `Perbedaan stres dan depresi perlu dipahami dengan baik:\n\n📌 Stres:\n• Respons normal terhadap tekanan\n• Biasanya hilang setelah masalah teratasi\n• Motivasi masih ada, meski terasa kewalahan\n\n📌 Depresi:\n• Kondisi medis yang butuh perhatian khusus\n• Berlangsung lebih dari 2 minggu\n• Kehilangan minat pada hal yang biasa disukai\n• Perasaan sedih, kosong, atau hopeless yang persisten\n\n⚠️ Jika kamu atau orang sekitarmu menunjukkan gejala depresi, segera konsultasi dengan psikolog atau psikiater.`,
+    sources: ['WHO Mental Health Guidelines', 'Modul Psikologi Dasar']
+  },
+  cemas: {
+    answer: `Kecemasan menjelang presentasi adalah hal yang sangat normal — ini menunjukkan kamu peduli dengan hasilnya!\n\nTips menghadapi kecemasan presentasi:\n\n🧘 Sebelum presentasi:\n• Latihan napas dalam: tarik 4 detik, tahan 4 detik, lepas 4 detik\n• Visualisasikan presentasi berjalan lancar\n• Persiapkan materi dengan baik\n\n💪 Saat presentasi:\n• Ingat: audiens mendukungmu, bukan menghakimi\n• Bicara sedikit lebih lambat dari biasanya\n• Jika lupa, jeda sebentar dan tarik napas\n\nSedikit kecemasan justru meningkatkan performa!`,
+    sources: ['Modul Psikologi Dasar', 'Mental Health Foundation Resources']
+  },
+  fokus: {
+    answer: `Cara meningkatkan fokus belajar yang terbukti efektif:\n\n🧠 Teknik belajar:\n• Metode Pomodoro (25 menit belajar, 5 menit istirahat)\n• Aktif recall — uji dirimu, bukan hanya baca ulang\n• Spaced repetition — ulang materi secara bertahap\n\n🏠 Lingkungan belajar:\n• Singkirkan notifikasi HP\n• Pilih tempat yang tenang dan cukup cahaya\n• Gunakan headphone dengan white noise jika perlu\n\n🌿 Faktor fisik:\n• Tidur cukup adalah kunci utama fokus\n• Minum air yang cukup\n• Olahraga ringan sebelum belajar meningkatkan fokus`,
+    sources: ['Buku Self Improvement', 'Modul Psikologi Dasar']
+  }
+};
+
+// =============================================
+// LEVEL SYSTEM
+// =============================================
+const LEVELS = [
+  { name: 'Beginner',    icon: '🌱', max: 100 },
+  { name: 'Explorer',    icon: '🗺️', max: 250 },
+  { name: 'Achiever',    icon: '⭐', max: 450 },
+  { name: 'Guardian',    icon: '🛡️', max: 700 },
+  { name: 'Mind Master', icon: '🧠', max: 999 }
+];
+
+let xp = 0;
+let level = 1;
+let chatCount = 0;
+let isLoading = false;
+const questXp   = [15, 20, 25, 10];
+const questDone = [false, false, false, false];
+
+// =============================================
+// XP & LEVEL HELPERS
+// =============================================
+function addXP(amount, label) {
+  xp += amount;
+  const toast = document.getElementById('xp-toast');
+  toast.textContent = '+' + amount + ' XP ' + (label || '🎉');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+  updateXPBar();
+  checkLevelUp();
+}
+
+function updateXPBar() {
+  const idx = Math.min(level - 1, 4);
+  const prevMax = level > 1 ? LEVELS[level - 2].max : 0;
+  const curMax  = LEVELS[idx].max;
+  const pct = Math.min(Math.max(((xp - prevMax) / (curMax - prevMax)) * 100, 0), 100);
+  document.getElementById('xp-fill').style.width = pct + '%';
+  document.getElementById('xp-label').textContent = xp + ' / ' + curMax + ' XP';
+}
+
+function checkLevelUp() {
+  if (level >= 5) return;
+  if (xp >= LEVELS[level - 1].max) {
+    level++;
+    const lvl = LEVELS[level - 1];
+    document.getElementById('level-name').textContent = lvl.name;
+    document.getElementById('level-sub').textContent  = 'Level ' + level;
+    document.getElementById('level-icon').textContent = lvl.icon;
+    updateXPBar();
+    appendMessage('bot',
+      '🎉 Selamat! Kamu naik ke Level ' + level + ': <strong>' + lvl.name + '</strong> ' + lvl.icon + '! Terus semangat menjaga kesehatan mentalmu!',
+      []
+    );
+  }
+}
+
+// =============================================
+// QUEST HELPERS
+// =============================================
+function completeQuest(idx) {
+  if (questDone[idx]) return;
+  questDone[idx] = true;
+  document.getElementById('q' + idx).classList.add('done');
+  addXP(questXp[idx], '✅');
+  if (questDone.every(Boolean)) {
+    document.getElementById('badge-streak').classList.remove('locked');
+  }
+}
+
+// =============================================
+// RESPONSE MATCHING
+// =============================================
+function getResponse(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('burnout'))                               return KNOWLEDGE_BASE.burnout;
+  if (m.includes('overthinking') || m.includes('pikiran berlebih'))  return KNOWLEDGE_BASE.overthinking;
+  if (m.includes('stres') || m.includes('stress') ||
+      m.includes('tugas')  || m.includes('kuliah'))        return KNOWLEDGE_BASE.stres;
+  if (m.includes('mindfulness') || m.includes('meditasi')) return KNOWLEDGE_BASE.mindfulness;
+  if (m.includes('kebiasaan') || m.includes('tips') ||
+      m.includes('mood'))                                  return KNOWLEDGE_BASE.kebiasaan;
+  if (m.includes('depresi') || m.includes('perbedaan'))    return KNOWLEDGE_BASE.depresi;
+  if (m.includes('cemas') || m.includes('anxious') ||
+      m.includes('presentasi'))                            return KNOWLEDGE_BASE.cemas;
+  if (m.includes('fokus') || m.includes('konsentrasi') ||
+      m.includes('belajar'))                               return KNOWLEDGE_BASE.fokus;
+
+  return {
+    answer: 'Terima kasih sudah bertanya! Saat ini knowledge base saya mencakup topik-topik seperti:\n• Burnout & kelelahan\n• Overthinking\n• Stres akademik\n• Mindfulness & meditasi\n• Kebiasaan sehat mental\n• Stres vs depresi\n• Kecemasan\n• Tips fokus belajar\n\nCoba tanyakan salah satu topik di atas, atau gunakan tombol quick question di bawah! 💙',
+    sources: ['MindQuest Knowledge Base']
+  };
+}
+
+// =============================================
+// CHAT UI HELPERS
+// =============================================
+function appendMessage(role, text, sources) {
+  const msgs  = document.getElementById('messages');
+  const div   = document.createElement('div');
+  div.className = 'msg ' + role;
+
+  const avatarEmoji = role === 'bot' ? '🤖' : '👤';
+  const avatarClass = role === 'bot' ? 'bot' : 'user';
+
+  let sourcesHtml = '';
+  if (sources && sources.length) {
+    sourcesHtml = '<div class="msg-source">' +
+      sources.map(s => '<span class="source-chip">📚 ' + s + '</span>').join('') +
+      '</div>';
+  }
+
+  const formatted = text.replace(/\n/g, '<br>');
+  div.innerHTML =
+    '<div class="msg-avatar ' + avatarClass + '">' + avatarEmoji + '</div>' +
+    '<div><div class="msg-bubble">' + formatted + '</div>' + sourcesHtml + '</div>';
+
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div  = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<div class="msg-avatar bot">🤖</div><div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+// =============================================
+// SEND MESSAGE
+// =============================================
+function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('user-input');
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendMessage('user', msg, []);
+  isLoading = true;
+  showTyping();
+
+  const delay = 700 + Math.random() * 800;
+  setTimeout(() => {
+    removeTyping();
+    const resp = getResponse(msg);
+    appendMessage('bot', resp.answer, resp.sources);
+    isLoading = false;
+    chatCount++;
+
+    if (!questDone[3]) completeQuest(3);
+    if (chatCount === 1)  addXP(10, '💬');
+    if (chatCount >= 3)   document.getElementById('badge-focus').classList.remove('locked');
+    if (chatCount >= 5)   document.getElementById('badge-stress').classList.remove('locked');
+  }, delay);
+}
+
+function askQuestion(q) {
+  document.getElementById('user-input').value = q;
+  sendMessage();
+}
+
+// =============================================
+// INPUT AUTO-RESIZE & ENTER TO SEND
+// =============================================
+const inputEl = document.getElementById('user-input');
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + 'px';
+});
+</script>
+</body>
+</html>
